@@ -1,0 +1,6 @@
+{
+  "name": "Money Manager",
+  "description": "Daily expense tracker and budget manager with instant smart AI financial insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
