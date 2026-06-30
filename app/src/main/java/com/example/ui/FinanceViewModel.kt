@@ -1,6 +1,7 @@
 package com.example.ui
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.BuildConfig
@@ -16,6 +17,54 @@ import java.util.Calendar
 class FinanceViewModel(application: Application) : AndroidViewModel(application) {
     private val db = AppDatabase.getDatabase(application)
     private val repository = FinanceRepository(db.financeDao())
+
+    // --- User Session Management ---
+    private val sharedPrefs = application.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+
+    private val _registeredUsername = MutableStateFlow(sharedPrefs.getString("username", null))
+    val registeredUsername: StateFlow<String?> = _registeredUsername.asStateFlow()
+
+    private val _isUserRegistered = MutableStateFlow(sharedPrefs.contains("username") && sharedPrefs.contains("password"))
+    val isUserRegistered: StateFlow<Boolean> = _isUserRegistered.asStateFlow()
+
+    private val _isUserLoggedIn = MutableStateFlow(sharedPrefs.getBoolean("is_logged_in", false))
+    val isUserLoggedIn: StateFlow<Boolean> = _isUserLoggedIn.asStateFlow()
+
+    fun registerUser(username: String, password: String): Boolean {
+        if (username.isBlank() || password.isBlank()) return false
+        sharedPrefs.edit()
+            .putString("username", username)
+            .putString("password", password)
+            .putBoolean("is_logged_in", true)
+            .apply()
+        _registeredUsername.value = username
+        _isUserRegistered.value = true
+        _isUserLoggedIn.value = true
+        return true
+    }
+
+    fun loginUser(password: String): Boolean {
+        val storedPassword = sharedPrefs.getString("password", "")
+        return if (storedPassword == password) {
+            sharedPrefs.edit().putBoolean("is_logged_in", true).apply()
+            _isUserLoggedIn.value = true
+            true
+        } else {
+            false
+        }
+    }
+
+    fun logoutUser() {
+        sharedPrefs.edit().putBoolean("is_logged_in", false).apply()
+        _isUserLoggedIn.value = false
+    }
+
+    fun resetUserSession() {
+        sharedPrefs.edit().clear().apply()
+        _registeredUsername.value = null
+        _isUserRegistered.value = false
+        _isUserLoggedIn.value = false
+    }
 
     // All transactions ordered by timestamp desc
     val transactions: StateFlow<List<TransactionEntity>> = repository.allTransactions

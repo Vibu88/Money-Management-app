@@ -45,39 +45,62 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(viewModel: FinanceViewModel) {
-    var selectedTab by remember { mutableStateOf(0) }
-    var showAddTransactionDialog by remember { mutableStateOf(false) }
-    var showAddBudgetDialog by remember { mutableStateOf(false) }
+    val isRegistered by viewModel.isUserRegistered.collectAsStateWithLifecycle()
+    val isLoggedIn by viewModel.isUserLoggedIn.collectAsStateWithLifecycle()
+    val registeredName by viewModel.registeredUsername.collectAsStateWithLifecycle()
 
-    val transactions by viewModel.transactions.collectAsStateWithLifecycle()
-    val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+    if (!isRegistered) {
+        RegisterScreen(viewModel = viewModel)
+    } else if (!isLoggedIn) {
+        LoginScreen(viewModel = viewModel)
+    } else {
+        var selectedTab by remember { mutableStateOf(0) }
+        var showAddTransactionDialog by remember { mutableStateOf(false) }
+        var showAddBudgetDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AccountBalanceWallet,
-                            contentDescription = "Wallet",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(32.dp)
-                        )
-                        Text(
-                            text = "Smart Wallet",
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.sp
-                        )
+        val transactions by viewModel.transactions.collectAsStateWithLifecycle()
+        val budgets by viewModel.budgets.collectAsStateWithLifecycle()
+
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = "Wallet",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = "Hi, ${registeredName ?: "User"}!",
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    ),
+                    actions = {
+                        IconButton(
+                            onClick = { viewModel.logoutUser() },
+                            modifier = Modifier.testTag("logout_button")
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Logout,
+                                contentDescription = "Log out",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
-            )
-        },
+            },
         bottomBar = {
             NavigationBar(
                 tonalElevation = 8.dp
@@ -167,6 +190,7 @@ fun DashboardScreen(viewModel: FinanceViewModel) {
             }
         }
     }
+}
 }
 
 @Composable
